@@ -20,25 +20,25 @@ from keras.preprocessing import image
 
 class EmotionRecognition():
 
-	def __init__(self):
-		self.create()
+    def __init__(self):
+        self.create()
 
-	def ConvBlock(self):
-		model.add(Convolution2D(120, 11, 11, activation='relu'))
-		model.add(MaxPooling2D((3,3), strides=(2,2)))
+    def ConvBlock(self):
+        self.model.add(Convolution2D(120, 11, 11, activation='relu'))
+        self.model.add(MaxPooling2D((3,3), strides=(2,2)))
 
-		model.add(Convolution2D(256, 5, 5, activation='relu'))
-		model.add(Convolution2D(384, 3, 3, activation='relu'))
+        self.model.add(Convolution2D(256, 5, 5, activation='relu'))
+        self.model.add(Convolution2D(384, 3, 3, activation='relu'))
 
-	def FCBlock(self)
-		model.add(Dense(2048, activation='relu'))
-		model.add(Dense(2048, activation='relu'))
-		model.add(Dense(7, activation='softmax'))
+    def FCBlock(self):
+        self.model.add(Dense(2048, activation='relu'))
+        self.model.add(Dense(2048, activation='relu'))
+        self.model.add(Dense(7, activation='softmax'))
 
-	def create(self):
-		self.model = Sequential()
-		self.ConvBlock()
-		self.FCBlock()
+    def create(self):
+        self.model = Sequential()
+        self.ConvBlock()
+        self.FCBlock()
 
 
 
