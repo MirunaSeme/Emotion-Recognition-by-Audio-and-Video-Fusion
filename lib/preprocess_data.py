@@ -15,15 +15,22 @@ import scipy.io.wavfile as wav
 from numpy.lib import stride_tricks
 from pydub.pydub import AudioSegment
 
+from lib.common import get_dataset
+
 from pprint import pprint
+from PIL import Image
 
 
 resample_command = ""
 divide_wav_command = ""
 generate_spectogram_command = "find . -name *.wav -execdir sox -V1 {} -r 16000 {} ';'"
 
-SAMPLE_PATH="..\\samples\\"
-AUGMENTED_SAMPLE_PATH="..\\augmented\\"
+SAMPLE_PATH="..\\data\\non-augmented\\samples\\"
+AUGMENTED_SAMPLE_PATH="..\\data\\augmented\\augmented_samples\\"
+AUGMENTED_SAMPLE_WITH_OVERLAP_PATH="..\\data\\augmented\\augmented_samples_with_overlap\\"
+TEMP_AUGMENTED_SPECTS_PATH = "..\\data\\for_testing_augmented_spects\\"
+TEMP_SPECTS_PATH = "..\\data\\for_testing_spects\\"
+CROPPED_SPECTS_AUGMENTED_WITH_OVERLAP = "..\\data\\augmented\\cropped_augmented_with_overlap_spects\\"
 
 
 # """ short time fourier transform of audio signal """
@@ -101,21 +108,6 @@ def plotstft(audiopath, binsize=2**10, plotpath=None, colormap="jet"):
 
     plt.clf()
 
-
-def get_dataset(path):
-    samples_tree = {}
-    for root, dirs, files in os.walk(path):
-        path = root.split(os.sep)
-        if len(path)-1 == 2:
-            samples_tree[root] = []
-        # print((len(path)-1), (len(path) - 1) * '---', os.path.basename(root))
-        for file in files:
-            # print(len(path) * '---', os.path.join(root,file))
-            if root in samples_tree:
-                if os.path.isfile(os.path.join(root,file)):
-                    samples_tree[root].append(os.path.join(root,file))
-    return samples_tree
-
 def get_number_of_splits(pydub_wavfile, split_size):
     length_pydub_wavfile = pydub_wavfile.__len__()
     return math.trunc(length_pydub_wavfile/split_size)
@@ -123,7 +115,7 @@ def get_number_of_splits(pydub_wavfile, split_size):
 
 def augment_dataset(split_size):
     samples_tree = get_dataset(SAMPLE_PATH)
-    augment_root = "..\\augmented\\"
+    augment_root = AUGMENTED_SAMPLE_PATH
     for key in samples_tree:
         for wavfile in samples_tree[key]:
             pydub_wavfile = AudioSegment.from_wav(wavfile)
@@ -140,21 +132,57 @@ def augment_dataset(split_size):
                 finish += split_size
             print(wavfile, "[DONE]")
 
-def spectrogram_dataset():
-    samples_tree = get_dataset(AUGMENTED_SAMPLE_PATH)
+def augment_dataset_with_overlap(split_size, split_step):
+    samples_tree = get_dataset(SAMPLE_PATH)
+    print(SAMPLE_PATH)
+    augment_root_overlap = AUGMENTED_SAMPLE_WITH_OVERLAP_PATH
+    print(AUGMENTED_SAMPLE_WITH_OVERLAP_PATH)
+    for key in samples_tree:
+        for wavfile in samples_tree[key]:
+            pydub_wavfile = AudioSegment.from_wav(wavfile)
+            # Number 3 = pair of two x start x finish
+            number_of_splits = get_number_of_splits(pydub_wavfile, split_step) - 3
+            start = split_step
+            finish = split_size + split_step
+            for split in range(number_of_splits):
+                wavfile_split = pydub_wavfile[start:finish]
+                wavfile_split_name = os.path.basename(wavfile).split(".")[0] + str(split) + ".wav"
+                augment_overlap_path = os.path.join(augment_root_overlap, os.path.basename(os.path.dirname(wavfile)),
+                                            wavfile_split_name)
+                print(augment_overlap_path)
+                wavfile_split.export(augment_overlap_path, format="wav")
+                start += split_step
+                finish += split_step
+            print(wavfile, "[DONE]")
+
+
+def crop_spectrogram(path):
+    spects_tree = get_dataset(path)
+    for key in spects_tree:
+        for spectrogram in spects_tree[key]:
+            img = Image.open(spectrogram)
+            new_img = img.crop((117, 13, 1025, 590))
+            new_img.save(spectrogram)
+            print("Finished", spectrogram)
+
+def spectrogram_dataset(path, plotroot):
+    samples_tree = get_dataset(path)
     # pprint(samples_tree)
 
-    plotroot = "..\\augmented_spects\\"
     for key in samples_tree:
         for wavfile in samples_tree[key]:
             spectfilename = os.path.basename(wavfile).split(".")[0] + ".png"
             plotpath = os.path.join(plotroot, os.path.basename(os.path.dirname(wavfile)), spectfilename)
             plotstft(wavfile, plotpath=plotpath)
+            print(plotpath)
             print(wavfile, "[DONE]")
 
 if __name__ == '__main__':
-    spectrogram_dataset()
     # augment_dataset(512)
+    # spectrogram_dataset(AUGMENTED_SAMPLE_WITH_OVERLAP_PATH, "..\\data\\augmented\\augmented_with_overlap_spects\\")
+    crop_spectrogram(CROPPED_SPECTS_AUGMENTED_WITH_OVERLAP)
+    # augment_dataset_with_overlap(1024, 512)
+
 
 
 
