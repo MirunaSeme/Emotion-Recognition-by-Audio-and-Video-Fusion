@@ -1,17 +1,18 @@
-import os
+import os, shutil
 import math
 from pydub.pydub import AudioSegment
 from PIL import Image
+from lib.constants.constants import training_folders
 
-def get_dataset(path):
+def get_dataset(path, subtree):
     samples_tree = {}
     for root, dirs, files in os.walk(path):
         path = root.split(os.sep)
-        if len(path)-1 == 4:
+        if len(path)-1 == subtree:
             samples_tree[root] = []
-        print((len(path)-1), (len(path) - 1) * '---', os.path.basename(root))
+        # print((len(path)-1), (len(path) - 1) * '---', os.path.basename(root))
         for file in files:
-            print(len(path) * '---', os.path.join(root,file))
+            # print(len(path) * '---', os.path.join(root,file))
             if root in samples_tree:
                 if os.path.isfile(os.path.join(root,file)):
                     samples_tree[root].append(os.path.join(root,file))
@@ -34,12 +35,27 @@ def write_size_wavfile(path, filename):
             target.write("\n")
     target.close()
 
-def write_size_spectrograms(path, filename):
+def write_size_spectrograms(path, filename, subtree):
     target = open(filename, 'w')
-    spects_tree = get_dataset(path)
+    spects_tree = get_dataset(path, subtree)
     for key in spects_tree:
         for spectogram in spects_tree[key]:
             img = Image.open(spectogram)
             target.write(str(img.size))
             target.write("\n")
     target.close()
+
+def create_training_directories(root_path, category_folder):
+    if not os.path.exists(root_path):
+        os.mkdir(root_path)
+
+    for folder in training_folders:
+        for category in category_folder:
+            os.makedirs(os.path.join(root_path, folder, category), exist_ok=True)
+
+def create_directory_tree(root_path, category_folder):
+    if not os.path.exists(root_path):
+        os.mkdir(root_path)
+
+    for category in category_folder:
+        os.makedirs(os.path.join(root_path, category), exist_ok=True)
