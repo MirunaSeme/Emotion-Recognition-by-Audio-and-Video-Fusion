@@ -6,8 +6,8 @@ import os
 # Delete wav files -. only spectograms remain
 # Divide into train valid & sample (train & valid)
 
-import os, shutil
-from os.path import basename, splitext
+import os, shutil, subprocess
+from os.path import basename, join, splitext, dirname
 import math
 
 import numpy as np
@@ -19,7 +19,7 @@ from pydub.pydub import AudioSegment
 from pprint import pprint
 from PIL import Image
 
-from lib.common.common import get_dataset
+from lib.common.common import get_dataset, create_training_directories
 from lib.constants.constants import constant_dir
 
 
@@ -173,9 +173,27 @@ def spectrogram_dataset(plotroot, path, subtree):
     for key in samples_tree:
         for wavfile in samples_tree[key]:
             spectfilename = os.path.basename(wavfile).split(".")[0] + ".png"
-            plotpath = os.path.join(plotroot, basename(key), spectfilename)
+            plotpath = os.path.join(key, spectfilename)
+            print(plotpath)
             plotstft(wavfile, plotpath=plotpath)
             print(wavfile, "[DONE]")
+
+def process_spectrograms(root_path, audio_path, category_folder):
+    if not os.path.exists(root_path):
+        create_training_directories(root_path, category_folder)
+        spectrogram_dataset(root_path, audio_path, 6)
+        crop_spectrogram(root_path)
+
+def extract_audio_from_video(root_path):
+    directories = get_dataset(root_path, 6)
+    for directory_key in directories:
+        for video in directories[directory_key]:
+            audio_name = basename(splitext(video)[0]) + ".wav"
+            audio_file_path = join(directory_key, audio_name)
+            command = "C:\\ffmpeg\\bin\\ffmpeg -loglevel quiet -i %s -f wav -ab 160k -vn %s" % (video, audio_file_path)
+            subprocess.call(command)
+            os.remove(video)
+        print("Finished: " + directory_key)
 
 
 

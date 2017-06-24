@@ -11,7 +11,7 @@ constant_dir["database"] = os.path.join(DATA, "database\\")
 
 CLASS_NUMBER = '%sclasses\\' % flags.CLASS_NUMBER
 CURRENT_DIR = os.path.join(DATA, CLASS_NUMBER, flags.TEST_NAME)
-constant_dir["root_dir"] = CURRENT_DIR
+constant_dir["root"] = CURRENT_DIR
 
 AUDIO_DIR = os.path.join(CURRENT_DIR, "audio\\")
 SPECTROGRAM_DIR = os.path.join(CURRENT_DIR, "spectrogram\\")
@@ -25,7 +25,7 @@ constant_dir["training"] = os.path.join(SPECTROGRAM_DIR, TRAIN)
 constant_dir["classes"] = os.path.join(SPECTROGRAM_DIR, CLASSES)
 
 
-training_folders = ["train", "valid", "sample\\train", "sample\\test", "test"]
+training_folders = ["train", "valid", "test"]
 category_7_folder = ["anger", "disgust", "fear", "happiness", "neutral", "sadness", "surprise"]
 category_3_folder = ["positive", "negative", "neutral"]
 data_folders = ["audio", "spectrogram"]
