@@ -65,7 +65,7 @@ def group_positive(root_path):
         happiness_tree = get_dataset(happiness_folder, 7)
         for key in happiness_tree:
             for index, audio in enumerate(happiness_tree[key]):
-                replaced_audio_name = basename(splitext(audio)[0]).replace('h', 'p') + ".avi"
+                replaced_audio_name = "p" + str(index) + ".avi"
                 new_audio_path = join(dirname(positive_folder), replaced_audio_name)
                 shutil.copy(audio, new_audio_path)
                 # print(new_audio_path)
@@ -99,7 +99,7 @@ def group_negative(root_path):
         sadness_tree = get_dataset(sadness_folder, 7)
         for key in sadness_tree:
             for index, audio in enumerate(sadness_tree[key]):
-                replaced_audio_name = basename(splitext(audio)[0]).replace('sa', 'neg') + ".avi"
+                replaced_audio_name = "neg" + str(index) + ".avi"
                 new_audio_path = join(dirname(negative_folder), replaced_audio_name)
                 shutil.copy(audio, new_audio_path)
                 # print(new_audio_path)

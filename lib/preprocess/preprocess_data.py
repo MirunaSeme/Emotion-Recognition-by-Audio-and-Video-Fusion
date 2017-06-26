@@ -142,8 +142,10 @@ def augment_dataset_with_overlap(root_path, subtree, split_size, split_step):
         for wavfile in samples_tree[key]:
             pydub_wavfile = AudioSegment.from_wav(wavfile)
             # Number 3 = pair of two x start x finish
-            number_of_splits = get_number_of_splits(pydub_wavfile, split_step) - 3
-            start = split_step
+            # Number 4 = pair of two x start x finish x another because split is smaller.
+            # It would have been 5, but eliminated one because changes start to bigger value (not split_step)
+            number_of_splits = get_number_of_splits(pydub_wavfile, split_step) - 9
+            start = 512
             finish = split_size + split_step
             for split in range(number_of_splits):
                 wavfile_split = pydub_wavfile[start:finish]
@@ -159,30 +161,28 @@ def augment_dataset_with_overlap(root_path, subtree, split_size, split_step):
             os.remove(wavfile)
 
 
-def crop_spectrogram(path, subtree = 6):
+def crop_spectrogram(path,subtree):
     spects_tree = get_dataset(path, subtree)
     for key in spects_tree:
         for spectrogram in spects_tree[key]:
             img = Image.open(spectrogram)
             new_img = img.crop((117, 13, 1025, 590))
             new_img.save(spectrogram)
-            print("Finished", spectrogram)
+            print("Finished cropping", spectrogram)
 
-def spectrogram_dataset(plotroot, path, subtree):
+def spectrogram_dataset(path, subtree):
     samples_tree = get_dataset(path, subtree)
     for key in samples_tree:
         for wavfile in samples_tree[key]:
             spectfilename = os.path.basename(wavfile).split(".")[0] + ".png"
-            plotpath = os.path.join(key, spectfilename)
-            print(plotpath)
+            plotpath = os.path.join(dirname(wavfile), spectfilename)
             plotstft(wavfile, plotpath=plotpath)
-            print(wavfile, "[DONE]")
+            print(wavfile, "[DONE SPECTROGRAM]")
+            os.remove(wavfile)
 
-def process_spectrograms(root_path, audio_path, category_folder):
-    if not os.path.exists(root_path):
-        create_training_directories(root_path, category_folder)
-        spectrogram_dataset(root_path, audio_path, 6)
-        crop_spectrogram(root_path)
+def process_spectrograms(root_path):
+    spectrogram_dataset(root_path, 6)
+    crop_spectrogram(root_path, 6)
 
 def extract_audio_from_video(root_path):
     directories = get_dataset(root_path, 6)

@@ -1,5 +1,5 @@
-TEST_NAME = "test_folder"
-CLASS_NUMBER = 7
+TEST_NAME = "less_redundant_spectrograms"
+CLASS_NUMBER = 3
 AUGMENT = 1
 OVERLAP_SIZE = 1024
 OVERLAP_STEP = 512
