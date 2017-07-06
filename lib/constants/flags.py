@@ -1,4 +1,4 @@
-TEST_NAME = "less_redundant_spectrograms"
+TEST_NAME = "Tutu_with_pitch"
 CLASS_NUMBER = 3
 AUGMENT = 1
 OVERLAP_SIZE = 1024

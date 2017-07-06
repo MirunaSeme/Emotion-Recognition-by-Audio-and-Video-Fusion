@@ -4,6 +4,14 @@ from pydub.pydub import AudioSegment
 from PIL import Image
 from lib.constants.constants import training_folders
 
+def memory():
+    import os
+    import psutil
+    pid = os.getpid()
+    py = psutil.Process(pid)
+    memoryUse = py.memory_info()
+    return memoryUse[0]/2.**30
+
 def get_dataset(path, subtree):
     samples_tree = {}
     for root, dirs, files in os.walk(path):
@@ -59,3 +67,4 @@ def create_directory_tree(root_path, category_folder):
 
     for category in category_folder:
         os.makedirs(os.path.join(root_path, category), exist_ok=True)
+

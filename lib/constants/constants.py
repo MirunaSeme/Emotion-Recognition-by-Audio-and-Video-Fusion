@@ -27,6 +27,6 @@ constant_dir["classes"] = os.path.join(SPECTROGRAM_DIR, CLASSES)
 
 training_folders = ["train", "valid", "test"]
 category_7_folder = ["anger", "disgust", "fear", "happiness", "neutral", "sadness", "surprise"]
-category_3_folder = ["positive", "negative", "neutral"]
+category_3_folder = ["negative", "neutral", "positive"]
 data_folders = ["audio", "spectrogram"]
 
