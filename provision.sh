@@ -15,6 +15,7 @@ function pip_install {
     pip install "$@" >/dev/null 2>&1
 }
 
+echo "export LC_ALL=en_US.UTF-8" >> ~/.bashrc
 echo "Updating package information"
 apt-get -y update >/dev/null 2>&1
 
@@ -40,5 +41,6 @@ pip_install 'jupyter' jupyter
 install 'matplotlib' matplotlib
 pip_install 'matplotlib' matplotlib
 install 'python-tk' python-tk
+pip_install 'pillow' pillow
 
 echo '####################################### [DONE]'

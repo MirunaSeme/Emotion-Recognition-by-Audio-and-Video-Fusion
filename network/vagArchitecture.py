@@ -2,10 +2,10 @@ import os, json
 
 os.environ['KERAS_BACKEND'] = "theano"
 os.environ['THEANO_FLAGS'] = "floatX=float32,device=cpu,force_device=True," \
-                             "exception_verbosity=high,nvcc.fastmath=True," \
+                             "exception_verbosity=high," \
                              "print_active_device=True"
-# extra THEANO_FLAGS = ,lib.cnmem=0.9
-# openmp=True,,gpuarray.sched=multi
+# extra THEANO_FLAGS = lib.cnmem=0.9,optimizer=fast_compile
+# openmp=True,gpuarray.sched=multi
 
 from glob import glob
 import numpy as np
@@ -30,21 +30,41 @@ import matplotlib.pyplot as plt
 K.set_image_dim_ordering('th')
 
 ######################################################################
-VGG_OR_PIU = 0  # set 0 for VGG, 1 for PIU
-EPOCHS = 30
-PATH = "..\\data\\3classes\\Tutu_with_pitch"
-# PATH = "data"
-BATCH_SIZE = 64
-# IMAGE_SIZE = (32, 32)
+VGG_OR_PIU_OR_TUTU = 2  # set 0 for VGG, 1 for PIU, 2 for TUTU
+EPOCHS = 15
+# PATH = "..\\data\\3classes\\Tutu_with_pitch"
+PATH = "data/"
+BATCH_SIZE = 4
+# IMAGE_SIZE = (16, 16)
+IMAGE_SIZE = (32, 32)
 # IMAGE_SIZE = (64, 64)
-IMAGE_SIZE = (128, 128)
+# IMAGE_SIZE = (128, 128)
 # IMAGE_SIZE = (256, 256)
 ######################################################################
 
 class EmotionRecognition:
-    def __init__(self, conv_model=VGG_OR_PIU):
+    def __init__(self, conv_model=VGG_OR_PIU_OR_TUTU):
         self.model = None
         self.create(conv_model)
+
+    def ConvBlockTutu(self):
+        self.model.add(Convolution2D(64, 2, activation='elu', input_shape=(3, IMAGE_SIZE[0], IMAGE_SIZE[1])))
+        self.model.add(MaxPooling2D(2))
+
+        self.model.add(Convolution2D(128, 2, activation='elu'))
+        self.model.add(MaxPooling2D(2))
+
+        self.model.add(Convolution2D(256, 2, activation='elu'))
+        self.model.add(MaxPooling2D(2))
+
+        self.model.add(Convolution2D(512, 2, activation='elu'))
+        self.model.add(MaxPooling2D(2))
+
+        self.model.add(Flatten())
+        self.model.add(Dense(1024, activation='elu'))
+        self.model.add(Dropout(0.5))
+        self.model.add(Dense(3, activation='softmax'))
+
 
     def ConvBlockVGGBased(self):
         self.model.add(Convolution2D(64, (3, 3), activation='relu', input_shape=(3, IMAGE_SIZE[0], IMAGE_SIZE[1])))
@@ -53,14 +73,14 @@ class EmotionRecognition:
         self.model.add(ZeroPadding2D((1, 1)))
         self.model.add(Convolution2D(128, (5, 5), activation='relu'))
         self.model.add(MaxPooling2D((2, 2), strides=(2, 2)))
-
-        self.model.add(ZeroPadding2D((1, 1)))
-        self.model.add(Convolution2D(256, (7, 7), activation='relu'))
-        self.model.add(MaxPooling2D((2, 2), strides=(2, 2)))
-
-        self.model.add(ZeroPadding2D((1, 1)))
-        self.model.add(Convolution2D(512, (7, 7), activation='relu'))
-        self.model.add(MaxPooling2D((2, 2), strides=(2, 2)))
+        #
+        # self.model.add(ZeroPadding2D((1, 1)))
+        # self.model.add(Convolution2D(256, (7, 7), activation='relu'))
+        # self.model.add(MaxPooling2D((2, 2), strides=(2, 2)))
+        #
+        # self.model.add(ZeroPadding2D((1, 1)))
+        # self.model.add(Convolution2D(512, (7, 7), activation='relu'))
+        # self.model.add(MaxPooling2D((2, 2), strides=(2, 2)))
 
     def ConvBlock(self):
         # self.model.add(Lambda(self.vgg_preprocess, input_shape=(3, 256, 256), output_shape=(3, 256, 256)))
@@ -83,9 +103,13 @@ class EmotionRecognition:
         self.model = Sequential()
         if conv_model == 0:
             self.ConvBlockVGGBased()
-        else:
+            self.FCBlock()
+        elif conv_model == 1:
             self.ConvBlock()
-        self.FCBlock()
+            self.FCBlock()
+        else:
+            self.ConvBlockTutu()
+
 
     def vgg_preprocess(self, x):
         vgg_mean = np.array([123.68, 116.779, 103.939], dtype=np.float32).reshape((3, 1, 1))
@@ -108,6 +132,10 @@ class EmotionRecognition:
         return np.concatenate([batches.next() for i in range(batches.samples)])
 
     def compile(self, lr=0.001):
+        if VGG_OR_PIU_OR_TUTU == 2:
+            print("Compiling for Tutu ...")
+            self.model.compile(optimizer=RMSprop(lr=lr), loss='categorical_crossentropy', metrics=['accuracy'])
+            return
         self.model.compile(optimizer=Adam(lr=lr),
                            loss='categorical_crossentropy', metrics=['accuracy'])
 
@@ -138,7 +166,11 @@ if __name__ == '__main__':
     # model.model.save_weights(PATH + "/model.weights", overwrite=True)
     # print("=" * 75, "[DONE]")
 
-    model_vgg_or_piu = "vgg" if VGG_OR_PIU == 0 else "piu"
+    model_vgg_or_piu = "vgg"
+    if VGG_OR_PIU_OR_TUTU == 1:
+        model_vgg_or_piu = 'piu'
+    elif VGG_OR_PIU_OR_TUTU == 2:
+        model_vgg_or_piu = 'tutu'
 
     # for epoch in range(EPOCHS):
     #     print("=" * 75)
@@ -154,7 +186,7 @@ if __name__ == '__main__':
     print("=" * 75)
 
     # checkpoint
-    filepath = "weights-improvement-{epoch:02d}-{val_acc:.2f}.hdf5"
+    filepath = "weights-improvement-%s-{epoch:02d}-{val_acc:.2f}.hdf5" % model_vgg_or_piu
     checkpoint = ModelCheckpoint(filepath, monitor='val_acc', verbose=1, save_best_only=True, mode='max')
     callbacks_list = [checkpoint]
 
