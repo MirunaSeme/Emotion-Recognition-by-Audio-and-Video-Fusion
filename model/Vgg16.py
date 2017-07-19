@@ -32,7 +32,7 @@ class Vgg16:
         self.FCBlock()
         model.add(Dense(7, activation='softmax'))
 
-        fname = 'vgg_weights_ep8.h5'
+        fname = 'weights_audio.h5'
         model.load_weights(os.path.abspath(fname))
 
     def ConvBlock(self, layers, filters):

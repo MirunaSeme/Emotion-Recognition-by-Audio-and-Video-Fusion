@@ -29,7 +29,6 @@ def partition_train_strict_percentage(ready_train_folder, spectrogram_folder, su
             shutil.copy(source, destination)
 
 def partition_train_fusion_synchronization(root_path):
-    # root_path = should be the place with new program: constant_dir["root"]
     if not exists(root_path):
         mkdir(root_path)
         create_training_directories(root_path, category_7_folder)
@@ -179,11 +178,6 @@ def move_file(source, destination, emotion, filenumber, filename, index, double 
     elif filenumber in range(valid_number, test_number):
         name = get_filename(filename, filenumber, index, test_number - valid_number)
         shutil.copyfile(source, join(destination, "test\\", emotion, name))
-
-
-
-def prepare_for_prediction():
-    pass
 
 
 

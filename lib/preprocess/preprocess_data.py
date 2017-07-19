@@ -1,12 +1,4 @@
-import os
-
-# Generate directory
-# Copy files from original to directory
-# Recursively go through all the folders and generate the corresponding spectograms
-# Delete wav files -. only spectograms remain
-# Divide into train valid & sample (train & valid)
-
-import os, shutil, subprocess
+import os, subprocess
 from os.path import basename, join, splitext, dirname
 import math
 
@@ -16,11 +8,9 @@ import scipy.io.wavfile as wav
 from numpy.lib import stride_tricks
 from pydub.pydub import AudioSegment
 
-from pprint import pprint
 from PIL import Image
 
-from lib.common.common import get_dataset, create_training_directories, memory
-from lib.constants.constants import constant_dir
+from lib.common.common import get_dataset, memory
 
 resample_command = ""
 divide_wav_command = ""
@@ -34,26 +24,18 @@ TEMP_SPECTS_PATH = "..\\data\\for_testing_spects\\"
 CROPPED_SPECTS_AUGMENTED_WITH_OVERLAP = "..\\data\\augmented\\cropped_augmented_with_overlap_spects_2\\"
 
 
-# """ short time fourier transform of audio signal """
 def stft(sig, frameSize, overlapFac=0.5, window=np.hanning):
     win = window(frameSize)
     hopSize = int(frameSize - np.floor(overlapFac * frameSize))
-
-    # zeros at beginning (thus center of 1st window should be for sample nr. 0)
     samples = np.append(np.zeros(np.floor(frameSize / 2.0)), sig)
-    # cols for windowing
     cols = np.ceil((len(samples) - frameSize) / float(hopSize)) + 1
-    # zeros at end (thus samples can be fully covered by frames)
     samples = np.append(samples, np.zeros(frameSize))
-
     frames = stride_tricks.as_strided(samples, shape=(cols, frameSize),
                                       strides=(samples.strides[0] * hopSize, samples.strides[0])).copy()
     frames *= win
-
     return np.fft.rfft(frames)
 
 
-# """ scale frequency axis logarithmically """
 def logscale_spec(spec, sr=44100, factor=20.):
     timebins, freqbins = np.shape(spec)
 
@@ -61,7 +43,7 @@ def logscale_spec(spec, sr=44100, factor=20.):
     scale *= (freqbins - 1) / max(scale)
     scale = np.unique(np.round(scale))
 
-    # create spectrogram with new freq bins
+    # create spectrogram with new frequencies
     newspec = np.complex128(np.zeros([timebins, len(scale)]))
     for i in range(0, len(scale)):
         if i == len(scale) - 1:
@@ -69,7 +51,7 @@ def logscale_spec(spec, sr=44100, factor=20.):
         else:
             newspec[:, i] = np.sum(spec[:, scale[i]:scale[i + 1]], axis=1)
 
-    # list center freq of bins
+    # make list of center of frequencies
     allfreqs = np.abs(np.fft.fftfreq(freqbins * 2, 1. / sr)[:freqbins + 1])
     freqs = []
     for i in range(0, len(scale)):
@@ -81,7 +63,7 @@ def logscale_spec(spec, sr=44100, factor=20.):
     return newspec, freqs
 
 
-# """ plot spectrogram"""
+# Plot spectrograms: @Frank Zalkow
 def plotstft(audiopath, binsize=2 ** 10, plotpath=None, colormap="jet"):
     samplerate, samples = wav.read(audiopath)
     s = stft(samples, binsize)
@@ -129,7 +111,6 @@ def augment_dataset(split_size):
                 wavfile_split_name = os.path.basename(wavfile).split(".")[0] + str(split) + ".wav"
                 augment_path = os.path.join(augment_root, os.path.basename(os.path.dirname(wavfile)),
                                             wavfile_split_name)
-                print(augment_path)
                 wavfile_split.export(augment_path, format="wav")
                 start += split_size
                 finish += split_size
@@ -138,7 +119,6 @@ def augment_dataset(split_size):
 
 def augment_with_overlap_dataset(root_path, subtree, split_size, split_step, file_start_number=0, delete=True):
     samples_tree = get_dataset(root_path, subtree)
-    # print(samples_tree)
     for key in samples_tree:
         for wavfile in samples_tree[key]:
             file_start_number = augment_with_overlap(wavfile, file_start_number, key, split_size, split_step, delete)
@@ -147,9 +127,6 @@ def augment_with_overlap_dataset(root_path, subtree, split_size, split_step, fil
 
 def augment_with_overlap(filename, filename_number, root_directory, split_size, split_step, delete):
     pydub_wavfile = AudioSegment.from_wav(filename)
-    # Number 3 = pair of two x start x finish
-    # Number 4 = pair of two x start x finish x another because split is smaller.
-    # It would have been 5, but eliminated one because changes start to bigger value (not split_step)
     number_of_splits = get_number_of_splits(pydub_wavfile, split_step) - 5
     start = split_size
     finish = 2*split_size
@@ -158,7 +135,6 @@ def augment_with_overlap(filename, filename_number, root_directory, split_size, 
         wavfile_split_name = basename(root_directory) + str(filename_number) + ".wav"
         filename_number += 1
         new_wavfile_path = os.path.join(os.path.dirname(filename), wavfile_split_name)
-        # print(new_wavfile_path)
         wavfile_split.export(new_wavfile_path, format="wav")
         start += split_step
         finish += split_step
@@ -218,11 +194,6 @@ def extract_audio_from_video_dataset(root_path, subtree=6):
     directories = get_dataset(root_path, subtree)
     for directory_key in directories:
         for video in directories[directory_key]:
-            # audio_name = basename(splitext(video)[0]) + ".wav"
-            # audio_file_path = join(directory_key, audio_name)
-            # command = "C:\\ffmpeg\\bin\\ffmpeg -loglevel quiet -i %s -f wav -ab 160k -vn %s" % (video, audio_file_path)
-            # subprocess.call(command)
-            # os.remove(video)
             extract_audio_from_video(video, directory_key)
 
 
@@ -233,4 +204,3 @@ def extract_audio_from_video(filename, directory, delete=True):
     subprocess.call(command)
     if delete:
         os.remove(filename)
-        # print("Finished: " + directory)

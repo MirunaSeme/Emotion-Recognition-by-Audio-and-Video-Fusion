@@ -18,9 +18,7 @@ def get_dataset(path, subtree):
         path = root.split(os.sep)
         if len(path)-1 == subtree:
             samples_tree[root] = []
-        # print((len(path)-1), (len(path) - 1) * '---', os.path.basename(root))
         for file in files:
-            # print(len(path) * '---', os.path.join(root,file))
             if root in samples_tree:
                 if os.path.isfile(os.path.join(root,file)):
                     samples_tree[root].append(os.path.join(root,file))
